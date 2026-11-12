@@ -110,6 +110,16 @@ npx wrangler dev        # http://127.0.0.1:8787 con D1 local
 
 La carpeta `public/assets/` debe contener: `logo.png`, `botella-ambar.jpg`, `etiqueta-ambar.jpg`, `etiqueta-roja.jpg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` y `apple-touch-icon.png`. Si no aparecen en el repositorio, súbalos desde GitHub (*Add file → Upload files*) antes de desplegar.
 
+## Cloudflare Pages (configuración actual)
+
+`wrangler.jsonc` está en formato **Pages**: define `pages_build_output_dir: ./public` y el binding `DB` → `sante-erp-db`, por lo que no hace falta configurarlos en el panel. En el proyecto Pages el comando de build debe quedar vacío.
+- El servidor para Pages es `public/_worker.js`, copia de `src/worker.js` (tras modificar el servidor ejecute `npm run sync-pages`).
+- Para desplegar como Worker en lugar de Pages, use `wrangler.workers.jsonc` (`npm run deploy:worker`).
+
+## Archivos binarios (imágenes)
+
+La carpeta `public/assets/` debe contener: `logo.png`, `botella-ambar.jpg`, `etiqueta-ambar.jpg`, `etiqueta-roja.jpg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` y `apple-touch-icon.png`. Si no aparecen en el repositorio, súbalos desde GitHub (*Add file → Upload files*) antes de desplegar.
+
 ## Despliegue en Cloudflare Pages (alternativa)
 
 El repositorio también funciona con **Pages** (URL `*.pages.dev`) gracias a `public/_worker.js`, copia de `src/worker.js` (si modifica el servidor, ejecute `npm run sync-pages`).

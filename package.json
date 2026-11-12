@@ -5,9 +5,11 @@
   "description": "Santé Cervecería Artesanal — ERP comercial sobre Cloudflare Workers y D1",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "sync-pages": "cp src/worker.js public/_worker.js"
+    "dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public --project-name=sant-3qv",
+    "sync-pages": "cp src/worker.js public/_worker.js",
+    "dev:worker": "wrangler dev -c wrangler.workers.jsonc",
+    "deploy:worker": "wrangler deploy -c wrangler.workers.jsonc"
   },
   "devDependencies": {
     "wrangler": "^4"

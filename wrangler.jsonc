@@ -1,19 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "sante-erp",
-  "main": "src/worker.js",
+  "name": "sant-3qv",
+  "pages_build_output_dir": "./public",
   "compatibility_date": "2026-08-01",
-  "assets": {
-    "directory": "./public",
-    "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
-  },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "sante-erp-db",
       "database_id": "b2df4521-1110-470c-843c-6b3b54c19078"
     }
-  ],
-  "observability": { "enabled": true }
+  ]
 }
