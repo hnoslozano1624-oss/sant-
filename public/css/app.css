@@ -254,3 +254,9 @@ body.locked .app,body.locked .tabbar{visibility:hidden}
 .side-foot b{color:var(--on-ink)}
 .side-foot .link{color:var(--sun);font-weight:500;font-size:12px}
 
+
+/* selector de cliente en pedidos */
+.cli-pick{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 100%}
+.cli-pick .btn{align-self:flex-start}
+.cli-new{display:flex;flex-direction:column;gap:10px;padding:12px;margin-top:2px}
+.cli-new[hidden]{display:none}

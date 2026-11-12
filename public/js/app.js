@@ -412,6 +412,25 @@ function route(){document.body.classList.remove('menu-open');const h=location.ha
 /* ---------- formularios ---------- */
 const fld=(l,n,v='',t='text',x='')=>`<label class="fld"><span>${l}</span><input id="f_${n}" name="${n}" type="${t}" value="${esc(v)}" ${x}></label>`;
 const sel=(l,n,opts,v='')=>`<label class="fld"><span>${l}</span><select id="f_${n}" name="${n}">${opts.map(o=>{const [a,b]=Array.isArray(o)?o:[o,o];return `<option value="${esc(a)}" ${String(a)===String(v)?'selected':''}>${esc(b)}</option>`}).join('')}</select></label>`;
+/* ---------- selector de cliente con búsqueda y alta rápida (pedidos) ---------- */
+const cliLabels=()=>{const cnt={};S.clientes.forEach(c=>{const k=(c.nombre||'').trim().toLowerCase();cnt[k]=(cnt[k]||0)+1});
+  return S.clientes.map(c=>{const k=(c.nombre||'').trim().toLowerCase();return {id:c.id,label:cnt[k]>1&&c.ciudad?`${c.nombre} · ${c.ciudad}`:c.nombre,c}}).sort((a,b)=>(a.label||'').localeCompare(b.label||'','es'))};
+const cliPicker=(cid)=>{const L=cliLabels(),cur=L.find(x=>x.id===cid),nuevo=!S.clientes.length;
+  return `<div class="cli-pick"><label class="fld"><span>Cliente</span><input id="f_cliBuscar" name="cliBuscar" type="search" list="cli_opts" autocomplete="off" placeholder="Escriba para buscar un cliente guardado…" value="${esc(cur?cur.label:'')}"></label>
+  <datalist id="cli_opts">${L.map(x=>`<option value="${esc(x.label)}">${esc([x.c.ciudad,x.c.tel].filter(Boolean).join(' · '))}</option>`).join('')}</datalist>
+  <input type="hidden" id="f_clienteId" name="clienteId" value="${esc(cid||'')}"><input type="hidden" name="nuevoCli" id="f_nuevoCli" value="${nuevo?'1':''}">
+  <div class="cli-hint mut small" id="cliHint">${nuevo?'Aún no hay clientes guardados: complete los datos del cliente nuevo.':(cur?'Cliente seleccionado.':'Seleccione uno de la lista o cree un cliente nuevo.')}</div>
+  <button type="button" class="btn ghost" data-act="cli-nuevo" id="cliToggle">${nuevo?'':'+ Cliente nuevo'}</button>
+  <div id="cliNuevo" class="cli-new card" ${nuevo?'':'hidden'}><div class="frow">${fld('Nombre o razón social del cliente nuevo','nuevoNombre','','text')}${sel('Tipo','nuevoTipo',['Restaurante o bar','Tienda o licorera','Distribuidor','Evento','Consumidor final'],'Restaurante o bar')}</div><div class="frow">${fld('Teléfono o WhatsApp','nuevoTel','')}${fld('Ciudad','nuevoCiudad','')}</div><div class="frow">${fld('Dirección','nuevoDir','')}${fld('Persona de contacto','nuevoContacto','')}</div><div class="mut small">Se guarda en el CRM al registrar el pedido.</div></div></div>`};
+function cliSync(f){const inp=f.querySelector('#f_cliBuscar'),hid=f.querySelector('#f_clienteId'),hint=f.querySelector('#cliHint');if(!inp||!hid)return;
+  const q=inp.value.trim().toLowerCase(),m=cliLabels().find(x=>x.label.toLowerCase()===q);
+  hid.value=m?m.id:'';
+  if(m){hint.textContent='Cliente seleccionado.';const c=D.C[m.id],pl=f.querySelector('[name=plazo]'),co=f.querySelector('[name=condicion]');if(c&&c.plazo&&pl&&co&&co.value==='Crédito')pl.value=c.plazo;return}
+  const n=cliLabels().filter(x=>q&&x.label.toLowerCase().includes(q)).length;
+  hint.textContent=!q?'Seleccione uno de la lista o cree un cliente nuevo.':(n?`${n} coincidencia(s): elija una de la lista.`:'No existe ese cliente. Pulse «+ Cliente nuevo» para crearlo.')}
+function cliToggle(f,open){const box=f.querySelector('#cliNuevo'),flag=f.querySelector('#f_nuevoCli'),btn=f.querySelector('#cliToggle'),inp=f.querySelector('#f_cliBuscar');
+  const abrir=open===undefined?box.hidden:open;box.hidden=!abrir;flag.value=abrir?'1':'';btn.textContent=abrir?'Usar un cliente guardado':'+ Cliente nuevo';
+  if(abrir){const nn=f.querySelector('#f_nuevoNombre');if(nn&&!nn.value)nn.value=inp.value.trim();if(nn)nn.focus();f.querySelector('#f_clienteId').value=''}else{cliSync(f)}}
 const area=(l,n,v='')=>`<label class="fld"><span>${l}</span><textarea id="f_${n}" name="${n}">${esc(v)}</textarea></label>`;
 function itemRow(i,kind){
   const prods=[['','Seleccione producto']].concat(S.productos.map(p=>[p.id,p.nombre]));
@@ -451,7 +470,7 @@ function openForm(kind,id,preset){
   else if(kind==='pedido'){const cot=preset&&preset.startsWith('cot:')?find('cotizaciones',preset.slice(4)):null;
     const q=find('pedidos',id)||(cot?{fecha:t,condicion:'Contado',clienteId:cot.clienteId||'',vendedor:cot.vendedor||'',items:cot.items,nota:'Cotización CT-'+pad(cot.n)+(cot.prospecto&&!cot.clienteId?' · '+cot.prospecto:'')}:preset&&preset.startsWith('cli:')?{fecha:t,condicion:'Contado',clienteId:preset.slice(4),items:[]}:preset==='credito'?{fecha:t,condicion:'Crédito',plazo:30,items:[]}:{fecha:t,condicion:'Contado',items:[]});
     if(!S.productos.length){toast('Cree primero un producto en el módulo Productos.');return}
-    modal(id?'Pedido PD-'+pad(q.n):'Nuevo pedido',`<div class="frow">${sel('Vendedor','vendedor',vendOpts(q.vendedor),q.vendedor||(USER&&USER.vendedor)||VENDEDORES[0])}${sel('Cliente','clienteId',[['','Seleccione cliente']].concat(S.clientes.map(x=>[x.id,x.nombre])),q.clienteId||'')}</div><div class="frow">${fld('Fecha de la venta','fecha',q.fecha||t,'date','required')}${fld('Fecha de entrega deseada','fechaEntrega',q.fechaEntrega||'','date')}${sel('Forma de pago','condicion',[['Contado','Efectivo'],['Crédito','Crédito']],q.condicion||'Contado')}${fld('Plazo en días (solo crédito)','plazo',q.plazo||'','number','min="0"')}</div>${itemsEditor(q.items,'venta')}${area('Observaciones','nota',q.nota||'')}${cot?`<input type="hidden" name="cotId" value="${cot.id}">`:''}<div class="mut small">Al guardar se crea la venta y se descuenta inventario. Si es en <b>efectivo</b>, el ingreso entra al Flujo de caja; si es a <b>crédito</b>, queda en Cartera con su vencimiento.${id?' Al eliminar el pedido también se elimina su venta.':''}</div>`,id,kind);}
+    modal(id?'Pedido PD-'+pad(q.n):'Nuevo pedido',`<div class="frow">${sel('Vendedor','vendedor',vendOpts(q.vendedor),q.vendedor||(USER&&USER.vendedor)||VENDEDORES[0])}${cliPicker(q.clienteId||'')}</div><div class="frow">${fld('Fecha de la venta','fecha',q.fecha||t,'date','required')}${fld('Fecha de entrega deseada','fechaEntrega',q.fechaEntrega||'','date')}${sel('Forma de pago','condicion',[['Contado','Efectivo'],['Crédito','Crédito']],q.condicion||'Contado')}${fld('Plazo en días (solo crédito)','plazo',q.plazo||'','number','min="0"')}</div>${itemsEditor(q.items,'venta')}${area('Observaciones','nota',q.nota||'')}${cot?`<input type="hidden" name="cotId" value="${cot.id}">`:''}<div class="mut small">Al guardar se crea la venta y se descuenta inventario. Si es en <b>efectivo</b>, el ingreso entra al Flujo de caja; si es a <b>crédito</b>, queda en Cartera con su vencimiento.${id?' Al eliminar el pedido también se elimina su venta.':''}</div>`,id,kind);}
   else if(kind==='ajuste'){const a=find('ajustes',id)||{fecha:t,cant:''};
     modal(id?'Editar ajuste':'Ajuste o merma de inventario',`${sel('Producto','pid',[['','Seleccione producto']].concat(S.productos.map(p=>[p.id,p.nombre])),a.pid||'')}<div class="frow">${fld('Fecha','fecha',a.fecha,'date','required')}${fld('Cantidad (negativa para bajas)','cant',a.cant,'number','required step="1"')}</div>${fld('Motivo','motivo',a.motivo||'','text','placeholder="Botellas rotas, muestras, conteo físico"')}`,id,kind);}
 }
@@ -519,7 +538,11 @@ async function onSubmit(form){
   if(kind==='cotizacion'){const items=collectItems(form);if(!items.length)return toast('Agregue al menos un producto con cantidad.');d={clienteId:g('clienteId'),prospecto:g('prospecto').trim(),fecha:g('fecha'),vigencia:gn('vigencia')||15,vendedor:g('vendedor'),estado:g('estado'),items,nota:g('nota'),n:old.n||nextN(S.cotizaciones),ventaId:old.ventaId||''};if(!d.clienteId&&!d.prospecto)return toast('Seleccione un cliente o escriba el nombre del prospecto.')}
   if(kind==='pedido'){const items=collectItems(form);if(!items.length)return toast('Agregue al menos un producto con cantidad.');
     d={vendedor:g('vendedor'),clienteId:g('clienteId'),fecha:g('fecha')||old.fecha||todayStr(),fechaEntrega:g('fechaEntrega'),condicion:g('condicion'),plazo:g('condicion')==='Crédito'?(gn('plazo')||30):0,items,nota:g('nota'),n:old.n||nextN(S.pedidos)};
-    if(!d.clienteId)return toast('Seleccione el cliente del pedido.');
+    if(g('nuevoCli')==='1'){const nn=g('nuevoNombre').trim();if(!nn)return toast('Escriba el nombre del cliente nuevo.');
+      const dup=S.clientes.find(c=>(c.nombre||'').trim().toLowerCase()===nn.toLowerCase());
+      if(dup)d.clienteId=dup.id;
+      else{const nid=uid();if(!await dbSet('clientes',nid,{nombre:nn,tipo:g('nuevoTipo'),estado:'Activo',contacto:g('nuevoContacto').trim(),tel:g('nuevoTel').trim(),email:'',ciudad:g('nuevoCiudad').trim(),direccion:g('nuevoDir').trim(),cupo:0,plazo:0,notas:'Creado desde Solicitud de pedidos',fechaAlta:todayStr()}))return;d.clienteId=nid}}
+    if(!d.clienteId)return toast('Seleccione un cliente guardado o cree uno nuevo.');
     const cred=d.condicion==='Crédito',lv=old.ventaId&&find('ventas',old.ventaId);
     const need={};items.forEach(i=>{need[i.pid]=(need[i.pid]||0)+i.cant});
     const prev={};if(lv)(lv.items||[]).forEach(x=>{prev[x.pid]=(prev[x.pid]||0)+(+x.cant||0)});
@@ -591,6 +614,7 @@ document.addEventListener('click',e=>{
   if(act==='bkcancel'){BK=null;UI.bkarm=false;render();return}
   if(act==='restore'){if(!UI.bkarm){UI.bkarm=true;render();return}restore();return}
   if(act==='close'){closeModal();return}
+  if(act==='cli-nuevo'){cliToggle(a.closest('form'));return}
   if(act==='new'){openForm(a.dataset.kind,null,a.dataset.preset);return}
   if(act==='edit'){const vv=a.dataset.kind==='venta'?find('ventas',a.dataset.id):null;if(vv&&vv.pedidoId&&find('pedidos',vv.pedidoId)){openForm('pedido',vv.pedidoId);return}openForm(a.dataset.kind,a.dataset.id);return}
   if(act==='prod'){openProd(a.dataset.id);return}
@@ -617,6 +641,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('submit',e=>{if(e.target.id==='mform'){e.preventDefault();onSubmit(e.target)}});
 document.addEventListener('input',e=>{
   const t=e.target;
+  if(t.id==='f_cliBuscar'){cliSync(t.closest('form'));return}
   if(t.dataset&&t.dataset.ui&&t.tagName==='INPUT'){UI[t.dataset.ui]=t.value;render();return}
   const f=t.closest&&t.closest('#mform');if(f&&t.closest('.irow'))refreshTotals(f);
 });
@@ -647,7 +672,7 @@ function vUsuarios(){
 }
 function openUser(id){
   const u=(USERS||[]).find(x=>x.id===id)||{rol:'vendedor',activo:true};
-  modal(id?'Editar usuario':'Nuevo usuario',`<div class="frow">${fld('Nombre completo','nombre',u.nombre||'','text','required')}${fld('Usuario para entrar','usuario',u.usuario||'','text',id?'readonly':'required pattern="[-A-Za-z0-9._]{3,40}" autocapitalize="none" autocomplete="off"')}</div><div class="frow">${sel('Rol','rol',[['vendedor','Vendedor'],['admin','Administrador']],u.rol)}${fld('Nombre como vendedor (aparece en pedidos y ventas)','vendedor',u.vendedor||'')}</div><div class="frow">${fld(id?'Nueva contraseña (deje vacío para no cambiarla)':'Contraseña (mínimo 8 caracteres)','clave','','password',(id?'':'required ')+'minlength="8" autocomplete="new-password"')}${id?sel('Estado','activo',[['si','Activo'],['no','Inactivo (no puede entrar)']],u.activo?'si':'no'):''}</div><div class="mut small">Entregue el usuario y la contraseña a la persona por un medio privado. Podrá cambiar su contraseña desde el menú.</div>`,id,'usuario',false);
+  modal(id?'Editar usuario':'Nuevo usuario',`<div class="frow">${fld('Nombre completo','nombre',u.nombre||'','text','required')}${fld('Usuario para entrar','usuario',u.usuario||'','text',id?'readonly':'required pattern="[A-Za-z0-9._\\-]{3,40}" autocapitalize="none" autocomplete="off"')}</div><div class="frow">${sel('Rol','rol',[['vendedor','Vendedor'],['admin','Administrador']],u.rol)}${fld('Nombre como vendedor (aparece en pedidos y ventas)','vendedor',u.vendedor||'')}</div><div class="frow">${fld(id?'Nueva contraseña (deje vacío para no cambiarla)':'Contraseña (mínimo 8 caracteres)','clave','','password',(id?'':'required ')+'minlength="8" autocomplete="new-password"')}${id?sel('Estado','activo',[['si','Activo'],['no','Inactivo (no puede entrar)']],u.activo?'si':'no'):''}</div><div class="mut small">Entregue el usuario y la contraseña a la persona por un medio privado. Podrá cambiar su contraseña desde el menú.</div>`,id,'usuario',false);
 }
 function openClave(){
   modal('Cambiar mi contraseña',`${fld('Contraseña actual','actual','','password','required autocomplete="current-password"')}<div class="frow">${fld('Nueva contraseña (mínimo 8 caracteres)','nueva','','password','required minlength="8" autocomplete="new-password"')}${fld('Repita la nueva contraseña','repetir','','password','required minlength="8" autocomplete="new-password"')}</div>`,null,'clave',false);
@@ -694,7 +719,7 @@ function showAuth(mode,needKey){
   const setup=mode==='setup';
   el.innerHTML=`<form class="authbox" id="authform" data-mode="${mode}"><img src="${IMG.logo}" alt="Santé Cervecería Artesanal"><h1>${setup?'Crear administrador':'Iniciar sesión'}</h1>${setup?'<p>Primera vez: cree el usuario administrador de la aplicación.</p>':''}
   ${setup?`<label class="fld"><span>Nombre completo</span><input name="nombre" required autocomplete="name"></label>`:''}
-  <label class="fld"><span>Usuario</span><input name="usuario" required autocapitalize="none" autocomplete="username" ${setup?'pattern="[-A-Za-z0-9._]{3,40}"':''}></label>
+  <label class="fld"><span>Usuario</span><input name="usuario" required autocapitalize="none" autocomplete="username" ${setup?'pattern="[A-Za-z0-9._\\-]{3,40}"':''}></label>
   <label class="fld"><span>Contraseña${setup?' (mínimo 8 caracteres)':''}</span><input name="clave" type="password" required ${setup?'minlength="8" autocomplete="new-password"':'autocomplete="current-password"'}></label>
   ${setup?`<label class="fld"><span>Repita la contraseña</span><input name="clave2" type="password" required minlength="8" autocomplete="new-password"></label>`:''}
   ${setup&&needKey?`<label class="fld"><span>Llave de configuración (SETUP_KEY)</span><input name="llave" type="password" required></label>`:''}
