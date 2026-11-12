@@ -50,7 +50,7 @@ Requisitos: cuenta de Cloudflare y Node.js 20+.
    ```bash
    npx wrangler d1 create sante-erp-db
    ```
-   Copie el `database_id` que muestra el comando y péguelo en `wrangler.jsonc`, reemplazando `PENDIENTE`.
+   Copie el `database_id` que muestra el comando y péguelo en `wrangler.jsonc`, reemplazando el valor actual.
 3. **(Recomendado) Clave de instalación** para que nadie más pueda crear el primer administrador:
    ```bash
    npx wrangler secret put SETUP_KEY

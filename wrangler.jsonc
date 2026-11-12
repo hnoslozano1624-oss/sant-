@@ -12,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "sante-erp-db",
-      "database_id": "PENDIENTE"
+      "database_id": "b2df4521-1110-470c-843c-6b3b54c19078"
     }
   ],
   "observability": { "enabled": true }
