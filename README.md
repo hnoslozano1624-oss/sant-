@@ -109,3 +109,10 @@ npx wrangler dev        # http://127.0.0.1:8787 con D1 local
 ## Archivos binarios (imágenes)
 
 La carpeta `public/assets/` debe contener: `logo.png`, `botella-ambar.jpg`, `etiqueta-ambar.jpg`, `etiqueta-roja.jpg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` y `apple-touch-icon.png`. Si no aparecen en el repositorio, súbalos desde GitHub (*Add file → Upload files*) antes de desplegar.
+
+## Despliegue en Cloudflare Pages (alternativa)
+
+El repositorio también funciona con **Pages** (URL `*.pages.dev`) gracias a `public/_worker.js`, copia de `src/worker.js` (si modifica el servidor, ejecute `npm run sync-pages`).
+- Build command: *(vacío)* · Build output directory: `public`
+- En *Settings → Bindings → D1 database*: variable `DB` → `sante-erp-db` (para Production y Preview).
+- Opcional: *Settings → Variables and Secrets* → `SETUP_KEY`.
