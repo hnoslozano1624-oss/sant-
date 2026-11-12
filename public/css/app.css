@@ -260,3 +260,11 @@ body.locked .app,body.locked .tabbar{visibility:hidden}
 .cli-pick .btn{align-self:flex-start}
 .cli-new{display:flex;flex-direction:column;gap:10px;padding:12px;margin-top:2px}
 .cli-new[hidden]{display:none}
+
+/* botón + de pedidos: grande y elevado sobre la barra */
+.tabbar{overflow:visible}
+.tabbar .add{position:relative;justify-content:flex-end;padding-bottom:5px}
+.tabbar .add span{position:absolute;left:50%;top:-36px;transform:translateX(-50%);width:62px;height:62px;border-radius:50%;background:var(--gold);color:var(--ink);border:4px solid var(--ink);box-shadow:0 6px 16px rgba(0,0,0,.35);transition:transform .15s ease}
+.tabbar .add span svg{width:30px;height:30px;stroke-width:2.4}
+.tabbar .add:active span{transform:translateX(-50%) scale(.94)}
+.tabbar .add{min-height:50px}
