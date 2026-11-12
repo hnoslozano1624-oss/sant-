@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Santé ERP</title>
+<meta name="description" content="Santé Cervecería Artesanal: pedidos, ventas, inventario, cartera y flujo de caja.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#161615">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Santé ERP">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Outfit:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body class="locked">
+<div class="app">
+  <aside class="side">
+    <a class="brand" href="#resumen" aria-label="Santé Cervecería Artesanal"><img id="logo" alt="Santé Cervecería Artesanal"></a>
+    <nav class="nav" id="nav" aria-label="Módulos"></nav>
+    <div class="side-foot"><div id="who"></div><div style="margin-top:10px">Valores en pesos colombianos</div></div>
+  </aside>
+  <main class="main">
+    <header class="top"><div><h1 id="ttl"></h1><div class="sub" id="sub"></div></div><div class="tools" id="tools"></div></header>
+    <div id="view"></div>
+  </main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Accesos rápidos"></nav>
+<div id="modal" hidden></div>
+<div id="toast" hidden></div>
+<div id="auth" hidden></div>
+<noscript>Esta aplicación necesita JavaScript.</noscript>
+<script src="js/app.js"></script>
+</body>
+</html>

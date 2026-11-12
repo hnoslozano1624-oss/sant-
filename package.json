@@ -1,0 +1,14 @@
+{
+  "name": "sante-erp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Santé Cervecería Artesanal — ERP comercial sobre Cloudflare Workers y D1",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}
