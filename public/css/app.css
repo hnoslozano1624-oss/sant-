@@ -268,3 +268,10 @@ body.locked .app,body.locked .tabbar{visibility:hidden}
 .tabbar .add span svg{width:30px;height:30px;stroke-width:2.4}
 .tabbar .add:active span{transform:translateX(-50%) scale(.94)}
 .tabbar .add{min-height:50px}
+
+.cli-list{display:flex;flex-direction:column;max-height:220px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.cli-list[hidden]{display:none}
+.cli-opt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;padding:10px 12px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--fg,inherit);text-align:left;font:inherit;cursor:pointer;min-height:44px}
+.cli-opt:last-child{border-bottom:0}
+.cli-opt:hover,.cli-opt:focus-visible{background:rgba(180,140,60,.14)}
+.cli-none{padding:10px 12px}

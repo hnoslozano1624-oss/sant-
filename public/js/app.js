@@ -416,12 +416,19 @@ const sel=(l,n,opts,v='')=>`<label class="fld"><span>${l}</span><select id="f_${
 const cliLabels=()=>{const cnt={};S.clientes.forEach(c=>{const k=(c.nombre||'').trim().toLowerCase();cnt[k]=(cnt[k]||0)+1});
   return S.clientes.map(c=>{const k=(c.nombre||'').trim().toLowerCase();return {id:c.id,label:cnt[k]>1&&c.ciudad?`${c.nombre} · ${c.ciudad}`:c.nombre,c}}).sort((a,b)=>(a.label||'').localeCompare(b.label||'','es'))};
 const cliPicker=(cid)=>{const L=cliLabels(),cur=L.find(x=>x.id===cid),nuevo=!S.clientes.length;
-  return `<div class="cli-pick"><label class="fld"><span>Cliente</span><input id="f_cliBuscar" name="cliBuscar" type="search" list="cli_opts" autocomplete="off" placeholder="Escriba para buscar un cliente guardado…" value="${esc(cur?cur.label:'')}"></label>
-  <datalist id="cli_opts">${L.map(x=>`<option value="${esc(x.label)}">${esc([x.c.ciudad,x.c.tel].filter(Boolean).join(' · '))}</option>`).join('')}</datalist>
+  return `<div class="cli-pick"><label class="fld"><span>Cliente</span><input id="f_cliBuscar" name="cliBuscar" type="search" autocomplete="off" placeholder="Elegir o buscar cliente…" value="${esc(cur?cur.label:'')}"></label>
+  <div class="cli-list" id="cliList" role="listbox" hidden></div>
   <input type="hidden" id="f_clienteId" name="clienteId" value="${esc(cid||'')}"><input type="hidden" name="nuevoCli" id="f_nuevoCli" value="${nuevo?'1':''}">
   <div class="cli-hint mut small" id="cliHint">${nuevo?'Aún no hay clientes guardados: complete los datos del cliente nuevo.':(cur?'Cliente seleccionado.':'Seleccione uno de la lista o cree un cliente nuevo.')}</div>
   <button type="button" class="btn ghost" data-act="cli-nuevo" id="cliToggle">${nuevo?'':'+ Cliente nuevo'}</button>
   <div id="cliNuevo" class="cli-new card" ${nuevo?'':'hidden'}><div class="frow">${fld('Nombre o razón social del cliente nuevo','nuevoNombre','','text')}${sel('Tipo','nuevoTipo',['Restaurante o bar','Tienda o licorera','Distribuidor','Evento','Consumidor final'],'Restaurante o bar')}</div><div class="frow">${fld('Teléfono o WhatsApp','nuevoTel','')}${fld('Ciudad','nuevoCiudad','')}</div><div class="frow">${fld('Dirección','nuevoDir','')}${fld('Persona de contacto','nuevoContacto','')}</div><div class="mut small">Se guarda en el CRM al registrar el pedido.</div></div></div>`};
+function cliList(f,show){const box=f.querySelector('#cliList'),inp=f.querySelector('#f_cliBuscar');if(!box||!inp)return;
+  if(show===false){box.hidden=true;return}
+  const q=inp.value.trim().toLowerCase(),L=cliLabels(),exact=L.some(x=>x.label.toLowerCase()===q),rows=(!q||exact)?L:L.filter(x=>x.label.toLowerCase().includes(q)||String(x.c.ciudad||'').toLowerCase().includes(q)||String(x.c.tel||'').includes(q));
+  if(!L.length){box.hidden=true;return}
+  box.innerHTML=rows.length?rows.map(x=>`<button type="button" class="cli-opt" role="option" data-act="cli-pick" data-id="${esc(x.id)}"><b>${esc(x.label)}</b><span class="mut small">${esc([x.c.ciudad,x.c.tel].filter(Boolean).join(' · '))}</span></button>`).join(''):'<div class="cli-none mut small">Sin coincidencias. Pulse «+ Cliente nuevo» para crearlo.</div>';
+  box.hidden=false}
+function cliPick(f,id){const m=cliLabels().find(x=>x.id===id);if(!m)return;f.querySelector('#f_cliBuscar').value=m.label;cliSync(f);cliList(f,false);if(!f.querySelector('#cliNuevo').hidden)cliToggle(f,false)}
 function cliSync(f){const inp=f.querySelector('#f_cliBuscar'),hid=f.querySelector('#f_clienteId'),hint=f.querySelector('#cliHint');if(!inp||!hid)return;
   const q=inp.value.trim().toLowerCase(),m=cliLabels().find(x=>x.label.toLowerCase()===q);
   hid.value=m?m.id:'';
@@ -470,7 +477,7 @@ function openForm(kind,id,preset){
   else if(kind==='pedido'){const cot=preset&&preset.startsWith('cot:')?find('cotizaciones',preset.slice(4)):null;
     const q=find('pedidos',id)||(cot?{fecha:t,condicion:'Contado',clienteId:cot.clienteId||'',vendedor:cot.vendedor||'',items:cot.items,nota:'Cotización CT-'+pad(cot.n)+(cot.prospecto&&!cot.clienteId?' · '+cot.prospecto:'')}:preset&&preset.startsWith('cli:')?{fecha:t,condicion:'Contado',clienteId:preset.slice(4),items:[]}:preset==='credito'?{fecha:t,condicion:'Crédito',plazo:30,items:[]}:{fecha:t,condicion:'Contado',items:[]});
     if(!S.productos.length){toast('Cree primero un producto en el módulo Productos.');return}
-    modal(id?'Pedido PD-'+pad(q.n):'Nuevo pedido',`<div class="frow">${sel('Vendedor','vendedor',vendOpts(q.vendedor),q.vendedor||(USER&&USER.vendedor)||VENDEDORES[0])}${cliPicker(q.clienteId||'')}</div><div class="frow">${fld('Fecha de la venta','fecha',q.fecha||t,'date','required')}${fld('Fecha de entrega deseada','fechaEntrega',q.fechaEntrega||'','date')}${sel('Forma de pago','condicion',[['Contado','Efectivo'],['Crédito','Crédito']],q.condicion||'Contado')}${fld('Plazo en días (solo crédito)','plazo',q.plazo||'','number','min="0"')}</div>${itemsEditor(q.items,'venta')}${area('Observaciones','nota',q.nota||'')}${cot?`<input type="hidden" name="cotId" value="${cot.id}">`:''}<div class="mut small">Al guardar se crea la venta y se descuenta inventario. Si es en <b>efectivo</b>, el ingreso entra al Flujo de caja; si es a <b>crédito</b>, queda en Cartera con su vencimiento.${id?' Al eliminar el pedido también se elimina su venta.':''}</div>`,id,kind);}
+    modal(id?'Pedido PD-'+pad(q.n):'Nuevo pedido',`<div class="frow">${sel('Vendedor','vendedor',vendOpts(q.vendedor),q.vendedor||(USER&&USER.vendedor)||VENDEDORES[0])}</div>${cliPicker(q.clienteId||'')}<div class="frow">${fld('Fecha de la venta','fecha',q.fecha||t,'date','required')}${fld('Fecha de entrega deseada','fechaEntrega',q.fechaEntrega||'','date')}${sel('Forma de pago','condicion',[['Contado','Efectivo'],['Crédito','Crédito']],q.condicion||'Contado')}${fld('Plazo en días (solo crédito)','plazo',q.plazo||'','number','min="0"')}</div>${itemsEditor(q.items,'venta')}${area('Observaciones','nota',q.nota||'')}${cot?`<input type="hidden" name="cotId" value="${cot.id}">`:''}<div class="mut small">Al guardar se crea la venta y se descuenta inventario. Si es en <b>efectivo</b>, el ingreso entra al Flujo de caja; si es a <b>crédito</b>, queda en Cartera con su vencimiento.${id?' Al eliminar el pedido también se elimina su venta.':''}</div>`,id,kind);if(!q.clienteId)setTimeout(()=>{const ff=$('#mform');if(ff)cliList(ff)},0)}
   else if(kind==='ajuste'){const a=find('ajustes',id)||{fecha:t,cant:''};
     modal(id?'Editar ajuste':'Ajuste o merma de inventario',`${sel('Producto','pid',[['','Seleccione producto']].concat(S.productos.map(p=>[p.id,p.nombre])),a.pid||'')}<div class="frow">${fld('Fecha','fecha',a.fecha,'date','required')}${fld('Cantidad (negativa para bajas)','cant',a.cant,'number','required step="1"')}</div>${fld('Motivo','motivo',a.motivo||'','text','placeholder="Botellas rotas, muestras, conteo físico"')}`,id,kind);}
 }
@@ -614,7 +621,8 @@ document.addEventListener('click',e=>{
   if(act==='bkcancel'){BK=null;UI.bkarm=false;render();return}
   if(act==='restore'){if(!UI.bkarm){UI.bkarm=true;render();return}restore();return}
   if(act==='close'){closeModal();return}
-  if(act==='cli-nuevo'){cliToggle(a.closest('form'));return}
+  if(act==='cli-nuevo'){cliList(a.closest('form'),false);cliToggle(a.closest('form'));return}
+  if(act==='cli-pick'){cliPick(a.closest('form'),a.dataset.id);return}
   if(act==='new'){openForm(a.dataset.kind,null,a.dataset.preset);return}
   if(act==='edit'){const vv=a.dataset.kind==='venta'?find('ventas',a.dataset.id):null;if(vv&&vv.pedidoId&&find('pedidos',vv.pedidoId)){openForm('pedido',vv.pedidoId);return}openForm(a.dataset.kind,a.dataset.id);return}
   if(act==='prod'){openProd(a.dataset.id);return}
@@ -634,6 +642,8 @@ document.addEventListener('click',e=>{
   if(act==='csv'){csv(a.dataset.name);return}
   if(['cobrar','recibir','pagar','cotventa','aprobar'].includes(act)){e.stopPropagation();quick(act,a.dataset.id)}
 },true);
+document.addEventListener('focusin',e=>{if(e.target.id==='f_cliBuscar')cliList(e.target.closest('form'))});
+document.addEventListener('click',e=>{const f=document.querySelector('#mform');if(!f)return;if(e.target.id==='f_cliBuscar'){cliList(f);return}if(!e.target.closest('.cli-pick'))cliList(f,false)});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&!$('#modal').hidden)closeModal();
   if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.pcard')){e.preventDefault();openProd(e.target.dataset.id)}
@@ -641,7 +651,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('submit',e=>{if(e.target.id==='mform'){e.preventDefault();onSubmit(e.target)}});
 document.addEventListener('input',e=>{
   const t=e.target;
-  if(t.id==='f_cliBuscar'){cliSync(t.closest('form'));return}
+  if(t.id==='f_cliBuscar'){cliSync(t.closest('form'));cliList(t.closest('form'));return}
   if(t.dataset&&t.dataset.ui&&t.tagName==='INPUT'){UI[t.dataset.ui]=t.value;render();return}
   const f=t.closest&&t.closest('#mform');if(f&&t.closest('.irow'))refreshTotals(f);
 });
