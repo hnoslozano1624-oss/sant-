@@ -396,3 +396,5 @@ svg.sales .vl{font-size:10.5px;font-weight:500;fill:var(--muted)}svg.sales .mcol
   .legend{gap:12px;font-size:12.5px}
   .acc-i{border-radius:16px;border-color:transparent;background:var(--surface2)}
 }
+
+.paid-all>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;list-style:none;min-height:44px}.paid-all>summary::-webkit-details-marker{display:none}.paid-all>summary h2{margin:0}.paid-all>summary::after{content:'▾';color:var(--muted);order:3;transition:transform .15s}.paid-all[open]>summary::after{transform:rotate(180deg)}
