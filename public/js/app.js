@@ -150,41 +150,82 @@ function vResumen(){
   if(hasData&&COLS.some(c=>S[c].some(x=>x.ejemplo)))h+=`<div class="banner"><p><b>Está viendo datos de ejemplo.</b> Reemplácelos por la operación real cuando esté lista.</p>${btn('Quitar datos de ejemplo','unseed')}</div>`;
   const delta=pm.ventas>0&&m>START?((st.ventas-pm.ventas)/pm.ventas*100):null;
   const pend=S.ventas.filter(v=>v.estado==='Pendiente'&&v.saldo>0).length;
-  h+=`<div class="grid g4">
+  const ub=st.ventas-st.cogs,cliMes=new Set(st.vm.filter(v=>!v.cortesia).map(v=>v.clienteId||'_')).size;
+  const ca=D.cort,caU=ca.reduce((a,v)=>a+unidades(v.items),0),caCosto=ca.reduce((a,v)=>a+(v.items||[]).reduce((b,i)=>b+(+i.cant||0)*D.cp(i.pid),0),0);
+  const nPagar=S.compras.filter(o=>o.pago==='Pendiente'&&o.estado!=='Anulada').length;
+  /* ---- todas las cifras arriba ---- */
+  h+=hello(m,st)+`<div class="grid g4">
   <div class="card kpi md hero"><span class="lab">Ventas de ${mname(m).split(' ')[0].toLowerCase()}</span><span class="val num">${fmt(st.ventas)}</span><span class="note">${st.n} pedido${st.n===1?'':'s'}${delta!==null?` · <span class="${delta>=0?'up':'down'}">${delta>=0?'▲':'▼'} ${Math.abs(delta).toFixed(0)}%</span> vs. mes anterior`:''}</span></div>
   <div class="card kpi md"><span class="lab">Ventas acumuladas</span><span class="val num">${fmt(acum)}</span><span class="note">${D.vSale.length} pedido${D.vSale.length===1?'':'s'}${D.vSale.length?` · ticket promedio ${fmt(acum/D.vSale.length)}`:''}</span></div>
   <div class="card kpi md"><span class="lab">Cartera</span><span class="val num">${fmt(D.cobrar)}</span><span class="note">${pend} pedido${pend===1?'':'s'} con saldo${D.vencida?` · <span class="down">${fmt(D.vencida)} vencidos</span>`:''}</span></div>
-  <div class="card kpi md"><span class="lab">Saldo de caja</span><span class="val num">${fmt(D.saldo)}</span><span class="note">${mname(m)}: ingresos ${fmt(st.ing)} · egresos ${fmt(st.egr)}</span></div></div>`;
-  const months=[];let mm=START;const lastM=D.cash.length?D.cash[D.cash.length-1].f.slice(0,7):START;const endM=[addMonths(START,5),lastM,curMonth()].sort().pop();while(mm<=endM){months.push(mm);mm=addMonths(mm,1)}
-  const cur=curMonth(),byM=months.map(x=>D.vOk.filter(v=>mkey(v.fecha)===x));
-  const tots=byM.map(vs=>vs.reduce((a,v)=>a+v.total,0));let run=0;const cum=tots.map((v,i)=>{run+=v;return months[i]>cur?null:run});
-  h+=`<div class="grid g2" style="margin-top:16px"><div class="card"><h2>Comportamiento de las ventas</h2>${barLineSvg(months,[{name:'Ventas del mes',color:'var(--bar-in)',vals:tots}],{name:'Ventas acumuladas',color:'var(--line-saldo)',vals:cum},'Ventas por mes y ventas acumuladas')}</div>`;
-  const names=[...VENDEDORES];if(D.vOk.some(v=>vendKey(v)==='Sin asignar'))names.push('Sin asignar');
-  const pal=['var(--bar-in)','var(--bar-out)','var(--line-saldo)','var(--amber)'];
-  h+=`<div class="card"><h2>Ventas por vendedor</h2>${barLineSvg(months,names.map((nm,i)=>({name:nm,color:nm==='Sin asignar'?'var(--muted)':pal[i%pal.length],vals:byM.map(vs=>vs.filter(v=>vendKey(v)===nm).reduce((a,v)=>a+v.total,0))})),null,'Ventas por mes de cada vendedor')}${vendTable()}</div></div>`;
-  const ub=st.ventas-st.cogs,cliMes=new Set(st.vm.map(v=>v.clienteId||'_')).size;
-  h+=`<div class="grid g4" style="margin-top:16px">
+  <div class="card kpi md"><span class="lab">Saldo de caja</span><span class="val num">${fmt(D.saldo)}</span><span class="note">${mname(m)}: ingresos ${fmt(st.ing)} · egresos ${fmt(st.egr)}</span></div></div>
+  <div class="grid g4" style="margin-top:16px">
   <div class="card kpi sm"><span class="lab">Utilidad bruta del mes</span><span class="val num">${fmt(ub)}</span><span class="note">${st.ventas?((ub/st.ventas)*100).toFixed(0)+'% de margen':'Sin ventas en el mes'}</span></div>
   <div class="card kpi sm"><span class="lab">Valor del inventario</span><span class="val num">${fmt(D.valorInv)}</span><span class="note">Al costo promedio de compra</span></div>
-  <div class="card kpi sm"><span class="lab">Por pagar</span><span class="val num">${fmt(D.pagar)}</span><span class="note">${(k=>k+(k===1?' orden sin pagar':' órdenes sin pagar'))(S.compras.filter(o=>o.pago==='Pendiente'&&o.estado!=='Anulada').length)}</span></div>
-  <div class="card kpi sm"><span class="lab">Clientes con compra</span><span class="val num">${cliMes}</span><span class="note">En el mes seleccionado</span></div></div>`;
-  const ca=D.cort,caU=ca.reduce((a,v)=>a+unidades(v.items),0),caCosto=ca.reduce((a,v)=>a+(v.items||[]).reduce((b,i)=>b+(+i.cant||0)*D.cp(i.pid),0),0);
-  h+=`<div class="grid g4" style="margin-top:16px">
+  <div class="card kpi sm"><span class="lab">Cuentas por pagar</span><span class="val num">${fmt(D.pagar)}</span><span class="note">${nPagar+(nPagar===1?' orden sin pagar':' órdenes sin pagar')}</span></div>
+  <div class="card kpi sm"><span class="lab">Clientes con compra</span><span class="val num">${cliMes}</span><span class="note">En el mes seleccionado</span></div></div>
+  <div class="grid g4" style="margin-top:16px">
   <div class="card kpi sm"><span class="lab">Cortesías de ${mname(m).split(' ')[0].toLowerCase()}</span><span class="val num">${nf(st.cortU)} und</span><span class="note">${st.cortN} entrega${st.cortN===1?'':'s'} · costo ${fmt(st.cortCosto)}</span></div>
   <div class="card kpi sm"><span class="lab">Cortesías acumuladas</span><span class="val num">${nf(caU)} und</span><span class="note">${ca.length} entrega${ca.length===1?'':'s'} · costo ${fmt(caCosto)}</span></div>
-</div>`;
+  </div>`;
+  /* ---- gráficas ---- */
+  h+=`<div class="card" style="margin-top:16px"><h2>Comportamiento de las ventas</h2><div class="mut small" style="margin-bottom:6px">Toque un mes para ver su detalle por vendedor y actualizar las cifras de arriba.</div>${salesChart(m)}</div>`;
+  h+=vendCard(m);
+  const months=[];let mm=START;const lastM=D.cash.length?D.cash[D.cash.length-1].f.slice(0,7):START;const endM=[addMonths(START,5),lastM,curMonth()].sort().pop();while(mm<=endM){months.push(mm);mm=addMonths(mm,1)}
   h+=`<div class="grid g21" style="margin-top:16px"><div class="card"><h2>Flujo de caja por mes</h2>${chartSvg(chartData(D,months,curMonth()))}</div>
   <div class="card"><h2>Stock por producto</h2>${stockList()}</div></div>`;
-  h+=`<div class="grid g2" style="margin-top:16px"><div class="card"><h2>Caja por medio de pago · ${mname(m)}</h2>${medioTable(m)}</div>
-  <div class="card"><h2>Últimos pedidos</h2>${lastVentas()}</div></div>`;
   return h;
 }
+function hello(m,st){const hr=new Date().getHours(),sal=hr<12?'Buenos días':hr<19?'Buenas tardes':'Buenas noches',nm=((USER&&USER.nombre)||'').trim().split(/\s+/)[0]||'',mes=mname(m).split(' ')[0].toLowerCase();
+  const bits=[];if(st.ventas>0)bits.push(`en ${mes} van <b>${fmt(st.ventas)}</b> en ventas`);else bits.push(`aún no hay ventas en ${mes}`);if(D.cobrar>0)bits.push(`tiene <b>${fmt(D.cobrar)}</b> por cobrar`);
+  return `<div class="hello"><div class="hi">${sal}${nm?', '+esc(nm):''} 👋</div><div class="hs">${bits.join(' y ')}.</div></div>`}
+const VPAL=['var(--bar-in)','var(--bar-out)','var(--line-saldo)','var(--amber)'];
+const vcolor=(nm,i)=>nm==='Sin asignar'?'var(--muted)':VPAL[i%VPAL.length];
+function salesChart(sel){
+  const cur=curMonth(),lastV=D.vSale.reduce((m,v)=>mkey(v.fecha)>m?mkey(v.fecha):m,START),endM=[cur,lastV].sort().pop();
+  const months=[];let mm=START;while(mm<=endM||months.length<4){months.push(mm);mm=addMonths(mm,1)}
+  const tots=months.map(x=>D.vSale.filter(v=>mkey(v.fecha)===x).reduce((a,v)=>a+v.total,0)),cnt=months.map(x=>D.vSale.filter(v=>mkey(v.fecha)===x).length);
+  let run=0;const cum=tots.map(v=>{run+=v;return run});
+  const mob=innerWidth<=640,W=mob?360:640,H=300,L=mob?58:52,R=mob?10:16,T=30,B=38,pw=W-L-R,ph=H-T-B,sc=niceScale(0,Math.max(1000000,...cum)),y=v=>T+ph-(v-sc.min)/(sc.max-sc.min)*ph,band=pw/months.length,bw=Math.min(54,band*.52);
+  let s=`<div class="legend"><span><i style="background:var(--bar-in)"></i>Ventas del mes</span><span><i style="background:var(--line-saldo)"></i>Ventas acumuladas</span></div><div class="tw"><svg class="chart sales" viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Ventas por mes y ventas acumuladas">
+  <defs><linearGradient id="gAc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--line-saldo);stop-opacity:.28"/><stop offset="1" style="stop-color:var(--line-saldo);stop-opacity:0"/></linearGradient></defs>`;
+  for(let v=sc.min;v<=sc.max+1e-9;v+=sc.step)s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L-8}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${cm(v)}</text>`;
+  const px=i=>L+band*i+band/2,pts=[];
+  months.forEach((x,i)=>{const cx=px(i),fut=x>cur,isSel=x===sel,lab=new Date(x+'-15T12:00:00').toLocaleDateString('es-CO',{month:'short'}).replace('.',''),yy=x.slice(2,4);
+    const tip=`${mname(x)}|Ventas del mes: ${fmt(tots[i])}|Acumulado: ${fmt(cum[i])}|${cnt[i]} pedido${cnt[i]===1?'':'s'}`;
+    s+=`<g class="mcol${isSel?' sel':''}${fut?' fut':''}" ${fut?'':`data-act="selmes" data-m="${x}" data-tip="${esc(tip)}" tabindex="0" role="button" aria-label="${esc(mname(x))}"`}><rect class="hit" x="${(cx-band/2).toFixed(1)}" y="${T-10}" width="${band.toFixed(1)}" height="${(ph+B+10).toFixed(1)}"/>`;
+    if(tots[i]>0){s+=`<rect class="bar" x="${(cx-bw/2).toFixed(1)}" y="${y(tots[i]).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(0)-y(tots[i])).toFixed(1)}" rx="6" fill="var(--bar-in)"/><text class="vl" x="${cx.toFixed(1)}" y="${(y(tots[i])-7).toFixed(1)}" text-anchor="middle">${cm(tots[i])}</text>`}
+    s+=`<text class="ml" x="${cx.toFixed(1)}" y="${H-14}" text-anchor="middle">${lab} ${yy}</text></g>`;
+    if(!fut)pts.push([cx,y(cum[i]),cum[i]])});
+  if(pts.length){const path=pts.map((p,i)=>i?`C${((pts[i-1][0]+p[0])/2).toFixed(1)},${pts[i-1][1].toFixed(1)} ${((pts[i-1][0]+p[0])/2).toFixed(1)},${p[1].toFixed(1)} ${p[0].toFixed(1)},${p[1].toFixed(1)}`:`M${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    s+=`<path d="${path} L${pts[pts.length-1][0].toFixed(1)},${y(0).toFixed(1)} L${pts[0][0].toFixed(1)},${y(0).toFixed(1)} Z" fill="url(#gAc)" style="pointer-events:none"/><path d="${path}" fill="none" stroke="var(--line-saldo)" stroke-width="3" stroke-linecap="round" style="pointer-events:none"/>`;
+    pts.forEach((p,i)=>{s+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i===pts.length-1?5.5:4}" fill="var(--surface)" stroke="var(--line-saldo)" stroke-width="2.5" style="pointer-events:none"/>`});
+    const lp=pts[pts.length-1];s+=`<text x="${Math.min(lp[0],W-R-4).toFixed(1)}" y="${(lp[1]-12).toFixed(1)}" text-anchor="end" style="fill:var(--fg);font-weight:700;font-size:13px;pointer-events:none">${cm(lp[2])}</text>`}
+  return s+'</svg></div>';
+}
+function vendCard(m){
+  const names=carteraNames(),modo=UI.vmodo==='acum'?'acum':'mes';
+  const per=nm=>{const vm=D.vOk.filter(v=>vendKey(v)===nm&&mkey(v.fecha)===m),va=D.vOk.filter(v=>vendKey(v)===nm&&mkey(v.fecha)<=m),sale=a=>a.filter(v=>!v.cortesia);
+    return {nm,mes:sale(vm).reduce((a,v)=>a+v.total,0),acum:sale(va).reduce((a,v)=>a+v.total,0),nMes:sale(vm).length,nAcum:sale(va).length,cort:vm.filter(v=>v.cortesia).reduce((a,v)=>a+unidades(v.items),0),cart:va.reduce((a,v)=>a+(v.saldo||0),0)}};
+  const rows=names.map(per),key=modo==='acum'?'acum':'mes',tot=rows.reduce((a,r)=>a+r[key],0),tm=rows.reduce((a,r)=>a+r.mes,0),ta=rows.reduce((a,r)=>a+r.acum,0);
+  const selV=rows.some(r=>r.nm===UI.vsel)?UI.vsel:'';
+  const R=84,C=2*Math.PI*R;let off=0;
+  const arcs=tot>0?rows.map((r,i)=>{if(r[key]<=0)return '';const len=r[key]/tot*C,dash=`${Math.max(0,len-(rows.filter(x=>x[key]>0).length>1?2:0)).toFixed(2)} ${(C-len+(rows.filter(x=>x[key]>0).length>1?2:0)).toFixed(2)}`,o=-off;off+=len;
+    return `<circle class="arc${selV===r.nm?' on':''}${selV&&selV!==r.nm?' dim':''}" cx="110" cy="110" r="${R}" fill="none" stroke="${vcolor(r.nm,i)}" stroke-width="${selV===r.nm?34:28}" stroke-dasharray="${dash}" stroke-dashoffset="${o.toFixed(2)}" transform="rotate(-90 110 110)" data-act="selven" data-v="${esc(r.nm)}" data-tip="${esc(r.nm+'|'+fmt(r[key])+' · '+Math.round(r[key]/tot*100)+'%|'+r[key===('mes')?'nMes':'nAcum']+' pedido'+((r[key==='mes'?'nMes':'nAcum'])===1?'':'s'))}" tabindex="0" role="button" aria-label="${esc(r.nm)}"/>`}).join(''):`<circle cx="110" cy="110" r="${R}" fill="none" stroke="var(--line)" stroke-width="28"/>`;
+  const sr=rows.find(r=>r.nm===selV),ci=sr?rows.indexOf(sr):-1;
+  const center=sr?`<text x="110" y="96" text-anchor="middle" class="dn">${esc(sr.nm)}</text><text x="110" y="122" text-anchor="middle" class="dv">${cm(sr[key])}</text><text x="110" y="142" text-anchor="middle" class="dn">${tot?Math.round(sr[key]/tot*100):0}% del total</text>`:`<text x="110" y="104" text-anchor="middle" class="dn">${modo==='acum'?'Acumulado a '+mname(m).split(' ')[0].toLowerCase():mname(m)}</text><text x="110" y="132" text-anchor="middle" class="dv">${tot>0?cm(tot):'Sin ventas'}</text>`;
+  return `<div class="card" style="margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><h2 style="margin:0">Ventas por vendedor · ${esc(mname(m))}</h2><div class="seg" role="group" aria-label="Base de la gráfica"><button type="button" class="${modo==='mes'?'on':''}" data-act="vmodo" data-m="mes">Del mes</button><button type="button" class="${modo==='acum'?'on':''}" data-act="vmodo" data-m="acum">Acumulado</button></div></div>
+  <div class="vend-wrap"><svg class="donut" viewBox="0 0 220 220" role="img" aria-label="Participación de cada vendedor en las ventas">${arcs}${center}</svg>
+  <div class="vend-list">${rows.map((r,i)=>`<button type="button" class="vrow${selV===r.nm?' on':''}" data-act="selven" data-v="${esc(r.nm)}"><i style="background:${vcolor(r.nm,i)}"></i><span class="vn"><b>${esc(r.nm)}</b><span class="mut small">${r.nMes} pedido${r.nMes===1?'':'s'} en el mes${r.cort?` · ${nf(r.cort)} und cortesía`:''}</span></span><span class="vv"><b class="num">${fmt(r.mes)}</b><span class="mut small">Acumulado ${fmt(r.acum)}</span></span></button>`).join('')}
+  <div class="vtot"><span>Total</span><span><b class="num">${fmt(tm)}</b> <span class="mut small">· acumulado ${fmt(ta)}</span></span></div></div></div></div>`;
+}
+function carteraNames(){const nm=[...VENDEDORES];if(D.vOk.some(v=>vendKey(v)==='Sin asignar'))nm.push('Sin asignar');return nm}
 function chartSvg(data){
-  const W=640,H=262,L=54,R=10,T=12,B=30,pw=W-L-R,ph=H-T-B;
+  const mob=innerWidth<=640,W=mob?360:640,H=262,L=mob?46:54,R=10,T=12,B=30,pw=W-L-R,ph=H-T-B;
   const vals=[];data.forEach(d=>{vals.push(d.ing,d.egr);if(!d.future)vals.push(d.saldo)});
   const sc=niceScale(Math.min(0,...vals),Math.max(1000000,...vals));
   const y=v=>T+ph-(v-sc.min)/(sc.max-sc.min)*ph, band=pw/data.length, bw=Math.min(28,band*.28);
-  let s=`<div class="legend"><span><i style="background:var(--bar-in)"></i>Ingresos</span><span><i style="background:var(--bar-out)"></i>Egresos</span><span><i style="background:var(--line-saldo)"></i>Saldo acumulado</span></div><div class="tw"><svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" style="min-width:420px;display:block" role="img" aria-label="Ingresos, egresos y saldo acumulado de caja por mes">`;
+  let s=`<div class="legend"><span><i style="background:var(--bar-in)"></i>Ingresos</span><span><i style="background:var(--bar-out)"></i>Egresos</span><span><i style="background:var(--line-saldo)"></i>Saldo acumulado</span></div><div class="tw"><svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Ingresos, egresos y saldo acumulado de caja por mes">`;
   for(let v=sc.min;v<=sc.max+1e-9;v+=sc.step){s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L-8}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${cm(v)}</text>`}
   s+=`<line class="ax" x1="${L}" x2="${W-R}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
   let pts=[];
@@ -201,8 +242,11 @@ function chartSvg(data){
 }
 function stockList(){
   if(!S.productos.length)return emptyHtml('Sin productos','Cree el primer producto en el módulo Productos.');
-  return S.productos.map(p=>{const q=D.stock[p.id]||0,mn=+p.stockMin||0;const st=q<=0?pill('Sin stock','bad'):q<=mn?pill('Reponer','warn'):pill('Suficiente','ok');
-    return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)"><div style="min-width:0"><div style="font-weight:500">${esc(p.nombre)}</div><div class="mut small">Mínimo ${nf(mn)} und.</div></div><div style="text-align:right"><div class="num" style="font:500 22px var(--f-display)">${nf(q)}</div>${st}</div></div>`}).join('');
+  const mxs=Math.max(1,...S.productos.map(p=>Math.max(D.stock[p.id]||0,(+p.stockMin||0)*2)));
+  return `<div class="stk">${S.productos.map(p=>{const q=D.stock[p.id]||0,mn=+p.stockMin||0,en=D.ent[p.id]||0,sa=-(D.sal[p.id]||0),img=prodImg(p)||(p.etiqueta==='ambar'?IMG.amber:'');
+    const lv=q<=0?'bad':q<=mn?'warn':'ok',lab=q<=0?'Sin stock':q<=mn?'Reponer':'Suficiente',pc=Math.max(q>0?4:0,Math.min(100,q/mxs*100)),mk=mn?Math.min(100,mn/mxs*100):0;
+    const tip=`${p.nombre}|Stock: ${nf(q)} und · ${lab}|Entradas ${nf(en)} · Salidas ${nf(sa)}${mn?' · Mínimo '+nf(mn):''}|Toque para ver sus movimientos`;
+    return `<button type="button" class="stk-i" data-act="stockprod" data-id="${p.id}" data-tip="${esc(tip)}"><span class="stk-img">${img?`<img src="${esc(img)}" alt="" loading="lazy">`:`<span class="mut">🍺</span>`}</span><span class="stk-b"><span class="stk-t"><b>${esc(p.nombre)}</b><span class="num stk-q">${nf(q)}</span></span><span class="stk-bar"><i class="${lv}" style="width:${pc.toFixed(0)}%"></i>${mk?`<u style="left:${mk.toFixed(0)}%" title="Mínimo"></u>`:''}</span><span class="stk-m"><span class="mut small">Mínimo ${nf(mn)} und.</span>${pill(lab,lv)}</span></span></button>`}).join('')}</div>`;
 }
 function medioTable(m){
   const rows=D.cash.filter(r=>mkey(r.f)===m);
@@ -661,6 +705,10 @@ document.addEventListener('click',e=>{
   if(act==='prod'){openProd(a.dataset.id);return}
   if(act==='cliente'){openCliente(a.dataset.id);return}
   if(act==='rmlab'){const f=a.closest('form');f.querySelector('#f_etiquetaImg').value='';f.querySelector('#labprev').innerHTML='';const fi=f.querySelector('#labfile');if(fi)fi.value='';a.remove();return}
+  if(act==='selmes'){UI.month=a.dataset.m;render();return}
+  if(act==='selven'){UI.vsel=UI.vsel===a.dataset.v?'':a.dataset.v;render();return}
+  if(act==='vmodo'){UI.vmodo=a.dataset.m;render();return}
+  if(act==='stockprod'){UI.fprod=a.dataset.id;location.hash='inventario';return}
   if(act==='cobrar'){openCobro(a.dataset.id);return}
   if(act==='abono'){openAbono(a.dataset.id);return}
   if(act==='rmabono'){const v=find('ventas',a.dataset.id);if(v){const ab=(v.abonos||[]).filter(x=>x.id!==a.dataset.aid),upd={abonos:ab};if(v.estado==='Pagado'&&ab.reduce((s,x)=>s+(+x.monto||0),0)<(+v.total||0)-0.5){upd.estado='Pendiente';upd.fechaPago=''}dbUpd('ventas',v.id,upd).then(ok=>{if(ok){closeModal();toast('Pago eliminado.')}})}return}
@@ -676,6 +724,14 @@ document.addEventListener('click',e=>{
   if(act==='csv'){csv(a.dataset.name);return}
   if(['cobrar','recibir','pagar','cotventa','aprobar'].includes(act)){e.stopPropagation();quick(act,a.dataset.id)}
 },true);
+(function(){let tp=null;const el=()=>tp||(tp=Object.assign(document.createElement('div'),{className:'tip',hidden:true}),document.body.appendChild(tp),tp);
+  const show=(t,x,y)=>{const e=el(),[h,...r]=t.dataset.tip.split('|');e.innerHTML=`<b>${esc(h)}</b>${r.map(l=>`<div>${esc(l)}</div>`).join('')}`;e.hidden=false;const w=e.offsetWidth,hh=e.offsetHeight;e.style.left=Math.max(8,Math.min(innerWidth-w-8,x+14))+'px';e.style.top=Math.max(8,(y-hh-12<8?y+18:y-hh-12))+'px'};
+  document.addEventListener('mouseover',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(t)show(t,e.clientX,e.clientY)});
+  document.addEventListener('mousemove',e=>{if(tp&&!tp.hidden){const t=e.target.closest&&e.target.closest('[data-tip]');if(t)show(t,e.clientX,e.clientY);else tp.hidden=true}});
+  document.addEventListener('mouseout',e=>{if(tp&&e.target.closest&&e.target.closest('[data-tip]')&&!(e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest('[data-tip]')))tp.hidden=true});
+  document.addEventListener('click',()=>{if(tp)tp.hidden=true},true);
+  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('g[data-act],circle[data-act]')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}})})();
+let _mob=innerWidth<=640;addEventListener('resize',()=>{const m=innerWidth<=640;if(m!==_mob){_mob=m;if(USER)schedule()}});
 document.addEventListener('focusin',e=>{if(e.target.id==='f_cliBuscar')cliList(e.target.closest('form'))});
 document.addEventListener('click',e=>{const f=document.querySelector('#mform');if(!f)return;if(e.target.id==='f_cliBuscar'){cliList(f);return}if(!e.target.closest('.cli-pick'))cliList(f,false)});
 document.addEventListener('keydown',e=>{
