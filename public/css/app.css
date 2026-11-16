@@ -275,3 +275,13 @@ body.locked .app,body.locked .tabbar{visibility:hidden}
 .cli-opt:last-child{border-bottom:0}
 .cli-opt:hover,.cli-opt:focus-visible{background:rgba(180,140,60,.14)}
 .cli-none{padding:10px 12px}
+
+/* acordeón de pedidos pagados por cliente */
+.acc{display:flex;flex-direction:column;gap:8px}
+.acc-i{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.acc-i>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;list-style:none;min-height:48px}
+.acc-i>summary::-webkit-details-marker{display:none}
+.acc-i>summary::before{content:'▸';margin-right:8px;color:var(--muted);transition:transform .15s}
+.acc-i[open]>summary::before{transform:rotate(90deg)}
+.acc-i>summary .acc-n{display:flex;flex-direction:column;flex:1;min-width:0}
+.acc-i[open]>summary{border-bottom:1px solid var(--line)}
