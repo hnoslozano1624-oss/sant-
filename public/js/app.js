@@ -1,7 +1,7 @@
 /* Santé ERP — aplicación (sin dependencias). El servidor está en src/worker.js */
 const IMG={logo:"assets/logo.png",amber:"assets/botella-ambar.jpg",labAmber:"assets/etiqueta-ambar.jpg",labRed:"assets/etiqueta-roja.jpg"};
 const START='2026-10';
-const MEDIOS=['Efectivo','Transferencia','Nequi','Daviplata','Tarjeta'];
+const MEDIOS=['Efectivo','Transferencia'];
 const COLS=['productos','clientes','compras','ventas','movcaja','ajustes','activos','cotizaciones','pedidos'];
 let VENDEDORES=['Santiago','Laura'];
 const COMPS=['Cerveza','Etiqueta','Caja six pack','Otro costo'];
@@ -250,7 +250,7 @@ function stockList(){
 }
 function medioTable(m){
   const rows=D.cash.filter(r=>mkey(r.f)===m);
-  const by={};MEDIOS.forEach(x=>by[x]={i:0,e:0});rows.forEach(r=>{const k=by[r.medio]?r.medio:'Efectivo';r.t==='Ingreso'?by[k].i+=r.m:by[k].e+=r.m});
+  const by={};MEDIOS.forEach(x=>by[x]={i:0,e:0});rows.forEach(r=>{const k=by[r.medio]?r.medio:(r.medio?'Transferencia':'Efectivo');r.t==='Ingreso'?by[k].i+=r.m:by[k].e+=r.m});
   const mx=Math.max(1,...Object.values(by).map(x=>x.i));
   if(!rows.length)return emptyHtml('Sin movimientos','No hay ingresos ni egresos registrados en este mes.');
   return tableWrap(`<table><thead><tr><th>Medio</th><th></th><th class="r">Ingresos</th><th class="r">Egresos</th><th class="r">Neto</th></tr></thead><tbody>${MEDIOS.map(k=>{const x=by[k];return `<tr><td>${k}</td><td style="width:20%"><div class="bar-track"><div class="bar-fill" style="width:${(x.i/mx*100).toFixed(0)}%"></div></div></td><td class="r">${fmt(x.i)}</td><td class="r">${fmt(x.e)}</td><td class="r ${x.i-x.e<0?'down':''}">${fmt(x.i-x.e)}</td></tr>`}).join('')}</tbody></table>`);
@@ -303,7 +303,7 @@ function vCaja(){
   const rows=D.cash.filter(r=>(!m||mkey(r.f)===m)&&(!md||r.medio===md));
   const ing=rows.filter(r=>r.t==='Ingreso').reduce((a,r)=>a+r.m,0),egr=rows.filter(r=>r.t==='Egreso').reduce((a,r)=>a+r.m,0);
   let h=`<div class="grid g4" style="margin-bottom:16px"><div class="card kpi sm"><span class="lab">Saldo actual</span><span class="val num">${fmt(D.saldo)}</span></div><div class="card kpi sm"><span class="lab">Ingresos del filtro</span><span class="val num up">${fmt(ing)}</span></div><div class="card kpi sm"><span class="lab">Egresos del filtro</span><span class="val num down">${fmt(egr)}</span></div><div class="card kpi sm"><span class="lab">Neto del filtro</span><span class="val num">${fmt(ing-egr)}</span></div></div>`;
-  const by={};MEDIOS.forEach(x=>by[x]={i:0,e:0});rows.forEach(r=>{const k=by[r.medio]?r.medio:'Efectivo';r.t==='Ingreso'?by[k].i+=r.m:by[k].e+=r.m});
+  const by={};MEDIOS.forEach(x=>by[x]={i:0,e:0});rows.forEach(r=>{const k=by[r.medio]?r.medio:(r.medio?'Transferencia':'Efectivo');r.t==='Ingreso'?by[k].i+=r.m:by[k].e+=r.m});
   h+=`<div class="card" style="margin-bottom:16px"><h2>Resumen por medio de pago</h2>${tableWrap(`<table><thead><tr><th>Medio de pago</th><th class="r">Ingresos</th><th class="r">Egresos</th><th class="r">Neto</th></tr></thead><tbody>${MEDIOS.map(k=>`<tr><td>${k}</td><td class="r">${fmt(by[k].i)}</td><td class="r">${fmt(by[k].e)}</td><td class="r ${by[k].i-by[k].e<0?'down':''}">${fmt(by[k].i-by[k].e)}</td></tr>`).join('')}</tbody></table>`)}</div>`;
   h+=`<div class="card"><h2>Movimientos</h2>`;
   if(!rows.length)h+=emptyHtml('Sin movimientos de caja','Registre el aporte inicial o cobre una venta para ver el flujo.',btn('Registrar aporte inicial','new','data-kind="mov" data-preset="aporte"','pri'));
@@ -666,7 +666,7 @@ async function seed(){
   await put('compras','ej_o1',{n:1,fecha:d(2),proveedor:'Productor cervecero (ejemplo)',estado:'Recibida',fechaRecibo:d(4),pago:'Pagado',fechaPago:d(2),medio:'Transferencia',items:[{pid:'amber',cant:240,val:3200},{pid:'roja',cant:160,val:3500}],nota:''});
   await put('compras','ej_o2',{n:2,fecha:d(20),proveedor:'Productor cervecero (ejemplo)',estado:'Pedida',fechaRecibo:'',pago:'Pendiente',fechaPago:'',medio:'Transferencia',items:[{pid:'amber',cant:120,val:3250},{pid:'roja',cant:120,val:3500}],nota:''});
   const A=8000,R=8500;
-  const vs=[[5,'ej_c1',[['amber',48,A],['roja',24,R]],'Transferencia','Pagado'],[8,'ej_c2',[['amber',24,A]],'Efectivo','Pagado'],[12,'ej_c3',[['roja',36,R]],'Nequi','Pagado'],[14,'',[['amber',6,A]],'Efectivo','Pagado'],[17,'ej_c1',[['amber',48,A],['roja',48,R]],'Transferencia','Pagado'],[20,'ej_c4',[['amber',12,A],['roja',12,R]],'Tarjeta','Pagado'],[23,'ej_c2',[['amber',36,A]],'Transferencia','Pendiente'],[24,'ej_c3',[['roja',24,R]],'Nequi','Pendiente']];
+  const vs=[[5,'ej_c1',[['amber',48,A],['roja',24,R]],'Transferencia','Pagado'],[8,'ej_c2',[['amber',24,A]],'Efectivo','Pagado'],[12,'ej_c3',[['roja',36,R]],'Transferencia','Pagado'],[14,'',[['amber',6,A]],'Efectivo','Pagado'],[17,'ej_c1',[['amber',48,A],['roja',48,R]],'Transferencia','Pagado'],[20,'ej_c4',[['amber',12,A],['roja',12,R]],'Tarjeta','Pagado'],[23,'ej_c2',[['amber',36,A]],'Transferencia','Pendiente'],[24,'ej_c3',[['roja',24,R]],'Transferencia','Pendiente']];
   let n=0;for(const v of vs){n++;await put('ventas','ej_v'+n,{n,vendedor:n%2?'Santiago':'Laura',fecha:d(v[0]),clienteId:v[1],items:v[2].map(i=>({pid:i[0],cant:i[1],val:i[2]})),medio:v[3],estado:v[4],fechaPago:v[4]==='Pagado'?d(v[0]):'',nota:''})}
   const ms=[['Ingreso','Aporte de socios','Aporte inicial de socios (ejemplo)',12000000,1,'Transferencia'],['Egreso','Inversión inicial','Registro sanitario y adecuaciones (ejemplo)',3500000,1,'Transferencia'],['Egreso','Marketing','Material gráfico y redes (ejemplo)',450000,15,'Transferencia'],['Egreso','Transporte','Fletes de entrega (ejemplo)',120000,5,'Efectivo']];
   n=0;for(const x of ms){n++;await put('movcaja','ej_m'+n,{tipo:x[0],cat:x[1],concepto:x[2],monto:x[3],fecha:d(x[4]),medio:x[5]})}
