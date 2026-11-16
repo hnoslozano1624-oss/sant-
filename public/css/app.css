@@ -359,7 +359,7 @@ svg.sales .vl{font-size:10.5px;font-weight:500;fill:var(--muted)}svg.sales .mcol
   .btn.pri{background:linear-gradient(180deg,#C29D4F,#A8863B);border-color:transparent;color:#fff;box-shadow:0 6px 14px rgba(177,142,67,.35)}
   .tools .btn.pri{box-shadow:0 6px 14px rgba(177,142,67,.35)}
   .fld input,.fld select,.fld textarea,.inp{min-height:48px;border-radius:14px;background:var(--surface2);border:1.5px solid var(--line)}
-  .fld input:focus,.fld select:focus,.fld textarea:focus,.inp:focus{border-color:var(--gold);background:var(--surface);outline:0;box-shadow:0 0 0 3px rgba(177,142,67,.22)}
+  .fld input:focus,.fld select:focus,.fld textarea:focus,.inp:focus{border-color:var(--gold);background-color:var(--surface);outline:0;box-shadow:0 0 0 3px rgba(177,142,67,.22)}
   .fld>span{font-size:12.5px;letter-spacing:.02em}
   .pill{padding:4px 10px;border-radius:999px;font-weight:500}
   .chips .chip{border-radius:999px;padding:7px 13px}
@@ -398,3 +398,26 @@ svg.sales .vl{font-size:10.5px;font-weight:500;fill:var(--muted)}svg.sales .mcol
 }
 
 .paid-all>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;list-style:none;min-height:44px}.paid-all>summary::-webkit-details-marker{display:none}.paid-all>summary h2{margin:0}.paid-all>summary::after{content:'▾';color:var(--muted);order:3;transition:transform .15s}.paid-all[open]>summary::after{transform:rotate(180deg)}
+
+/* ===== CELULAR: formularios sin solapamientos ===== */
+@media (max-width:640px){
+  .frow{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px}
+  .frow>*{min-width:0}
+  .fld{gap:6px;min-width:0}
+  .fld>span{line-height:1.25}
+  .frow{align-items:end}
+  .fld input[type=file]{width:100%;font-size:14px}.frow>:only-child,.frow>:last-child:nth-child(odd){grid-column:1/-1}
+  .fld input,.fld select,.fld textarea,.inp{width:100%;max-width:100%;min-width:0;box-sizing:border-box;-webkit-appearance:none;appearance:none}
+  .fld input[type=date],.fld input[type=month],.fld input[type=time]{display:block;min-width:0;width:100%;max-width:100%;text-align:left;line-height:1.2;padding-right:8px}
+  .fld input[type=date]::-webkit-date-and-time-value{text-align:left;min-width:0;margin:0}
+  .fld input[type=date]::-webkit-calendar-picker-indicator{margin:0 0 0 4px;padding:0}
+  .fld select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 55%,calc(100% - 13px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:30px}
+  .sheet .bd{overflow-x:hidden}.sheet .bd>*{min-width:0}
+  .irow,.irow.c{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:12px;margin-bottom:10px;border:1.5px solid var(--line);border-radius:16px;background:var(--surface2)}
+  .irow>select,.irow.c>select{grid-column:1/-1;width:100%;min-width:0}
+  .irow>input{width:100%;min-width:0}
+  .irow .ln{grid-column:1;text-align:left;font-size:16px;min-width:0;align-self:center}
+  .irow>button{grid-column:2;justify-self:end;min-width:48px}
+  .irow .hint{grid-column:1/-1;margin-top:0}
+  .mut.small{line-height:1.4}
+}
