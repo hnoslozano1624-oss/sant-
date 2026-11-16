@@ -121,7 +121,7 @@ function barLineSvg(months,bars,line,aria){
   const sc=niceScale(0,Math.max(...all));
   const y=v=>T+ph-(v-sc.min)/(sc.max-sc.min)*ph,band=pw/months.length,n=bars.length,bw=Math.min(26,band*.7/n);
   let s=`<div class="legend">${bars.map(b=>`<span><i style="background:${b.color}"></i>${esc(b.name)}</span>`).join('')}${line?`<span><i style="background:${line.color}"></i>${esc(line.name)}</span>`:''}</div><div class="tw"><svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" style="min-width:420px;display:block" role="img" aria-label="${esc(aria)}">`;
-  for(let v=sc.min;v<=sc.max+1e-9;v+=sc.step){s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L-8}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${cm(v)}</text>`}
+  for(let v=sc.min;v<=sc.max+1e-9;v+=sc.step){s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L-8}" y="${(y(v)+3.5).toFixed(1)}" text-anchor="end">${cm(v)}</text>`}
   s+=`<line class="ax" x1="${L}" x2="${W-R}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
   const pts=[];
   months.forEach((m,i)=>{const cx=L+band*i+band/2;
@@ -186,21 +186,21 @@ function salesChart(sel){
   const months=[];let mm=START;while(mm<=endM||months.length<4){months.push(mm);mm=addMonths(mm,1)}
   const tots=months.map(x=>D.vSale.filter(v=>mkey(v.fecha)===x).reduce((a,v)=>a+v.total,0)),cnt=months.map(x=>D.vSale.filter(v=>mkey(v.fecha)===x).length);
   let run=0;const cum=tots.map(v=>{run+=v;return run});
-  const mob=innerWidth<=640,W=mob?360:640,H=300,L=mob?58:52,R=mob?10:16,T=30,B=38,pw=W-L-R,ph=H-T-B,sc=niceScale(0,Math.max(1000000,...cum)),y=v=>T+ph-(v-sc.min)/(sc.max-sc.min)*ph,band=pw/months.length,bw=Math.min(54,band*.52);
-  let s=`<div class="legend"><span><i style="background:var(--bar-in)"></i>Ventas del mes</span><span><i style="background:var(--line-saldo)"></i>Ventas acumuladas</span></div><div class="tw"><svg class="chart sales" viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Ventas por mes y ventas acumuladas">
-  <defs><linearGradient id="gAc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--line-saldo);stop-opacity:.28"/><stop offset="1" style="stop-color:var(--line-saldo);stop-opacity:0"/></linearGradient></defs>`;
-  for(let v=sc.min;v<=sc.max+1e-9;v+=sc.step)s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L-8}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${cm(v)}</text>`;
+  const mob=innerWidth<=640,W=mob?360:820,H=mob?210:230,L=mob?50:54,R=mob?12:20,T=24,B=30,pw=W-L-R,ph=H-T-B,sc=niceScale(0,Math.max(1000000,...cum)),y=v=>T+ph-(v-sc.min)/(sc.max-sc.min)*ph,band=pw/months.length,bw=Math.min(mob?18:26,band*.34);
+  let s=`<div class="legend"><span><i style="background:var(--bar-in)"></i>Ventas del mes</span><span><i style="background:var(--line-saldo)"></i>Ventas acumuladas</span></div><div class="tw"><svg class="chart sales" viewBox="0 0 ${W} ${H}" width="100%" style="display:block;max-width:860px;margin:0 auto" role="img" aria-label="Ventas por mes y ventas acumuladas">
+  <defs><linearGradient id="gAc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--line-saldo);stop-opacity:.12"/><stop offset="1" style="stop-color:var(--line-saldo);stop-opacity:0"/></linearGradient></defs>`;
+  for(let v=sc.min;v<=sc.max+1e-9;v+=sc.step)s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L-8}" y="${(y(v)+3.5).toFixed(1)}" text-anchor="end">${cm(v)}</text>`;
   const px=i=>L+band*i+band/2,pts=[];
   months.forEach((x,i)=>{const cx=px(i),fut=x>cur,isSel=x===sel,lab=new Date(x+'-15T12:00:00').toLocaleDateString('es-CO',{month:'short'}).replace('.',''),yy=x.slice(2,4);
     const tip=`${mname(x)}|Ventas del mes: ${fmt(tots[i])}|Acumulado: ${fmt(cum[i])}|${cnt[i]} pedido${cnt[i]===1?'':'s'}`;
     s+=`<g class="mcol${isSel?' sel':''}${fut?' fut':''}" ${fut?'':`data-act="selmes" data-m="${x}" data-tip="${esc(tip)}" tabindex="0" role="button" aria-label="${esc(mname(x))}"`}><rect class="hit" x="${(cx-band/2).toFixed(1)}" y="${T-10}" width="${band.toFixed(1)}" height="${(ph+B+10).toFixed(1)}"/>`;
-    if(tots[i]>0){s+=`<rect class="bar" x="${(cx-bw/2).toFixed(1)}" y="${y(tots[i]).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(0)-y(tots[i])).toFixed(1)}" rx="6" fill="var(--bar-in)"/><text class="vl" x="${cx.toFixed(1)}" y="${(y(tots[i])-7).toFixed(1)}" text-anchor="middle">${cm(tots[i])}</text>`}
-    s+=`<text class="ml" x="${cx.toFixed(1)}" y="${H-14}" text-anchor="middle">${lab} ${yy}</text></g>`;
+    if(tots[i]>0){s+=`<rect class="bar" x="${(cx-bw/2).toFixed(1)}" y="${y(tots[i]).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(0)-y(tots[i])).toFixed(1)}" rx="4" fill="var(--bar-in)"/><text class="vl" x="${cx.toFixed(1)}" y="${(y(tots[i])-6).toFixed(1)}" text-anchor="middle">${cm(tots[i])}</text>`}
+    s+=`<text class="ml" x="${cx.toFixed(1)}" y="${H-10}" text-anchor="middle">${lab} ${yy}</text></g>`;
     if(!fut)pts.push([cx,y(cum[i]),cum[i]])});
   if(pts.length){const path=pts.map((p,i)=>i?`C${((pts[i-1][0]+p[0])/2).toFixed(1)},${pts[i-1][1].toFixed(1)} ${((pts[i-1][0]+p[0])/2).toFixed(1)},${p[1].toFixed(1)} ${p[0].toFixed(1)},${p[1].toFixed(1)}`:`M${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-    s+=`<path d="${path} L${pts[pts.length-1][0].toFixed(1)},${y(0).toFixed(1)} L${pts[0][0].toFixed(1)},${y(0).toFixed(1)} Z" fill="url(#gAc)" style="pointer-events:none"/><path d="${path}" fill="none" stroke="var(--line-saldo)" stroke-width="3" stroke-linecap="round" style="pointer-events:none"/>`;
-    pts.forEach((p,i)=>{s+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i===pts.length-1?5.5:4}" fill="var(--surface)" stroke="var(--line-saldo)" stroke-width="2.5" style="pointer-events:none"/>`});
-    const lp=pts[pts.length-1];s+=`<text x="${Math.min(lp[0],W-R-4).toFixed(1)}" y="${(lp[1]-12).toFixed(1)}" text-anchor="end" style="fill:var(--fg);font-weight:700;font-size:13px;pointer-events:none">${cm(lp[2])}</text>`}
+    s+=`<path d="${path} L${pts[pts.length-1][0].toFixed(1)},${y(0).toFixed(1)} L${pts[0][0].toFixed(1)},${y(0).toFixed(1)} Z" fill="url(#gAc)" style="pointer-events:none"/><path d="${path}" fill="none" stroke="var(--line-saldo)" stroke-width="1.75" stroke-linecap="round" style="pointer-events:none"/>`;
+    pts.forEach((p,i)=>{s+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i===pts.length-1?3.5:2.5}" fill="var(--surface)" stroke="var(--line-saldo)" stroke-width="1.5" style="pointer-events:none"/>`});
+    const lp=pts[pts.length-1];s+=`<text x="${Math.min(lp[0],W-R-4).toFixed(1)}" y="${(lp[1]-9).toFixed(1)}" text-anchor="end" style="fill:var(--fg);font-weight:600;font-size:11.5px;pointer-events:none">${cm(lp[2])}</text>`}
   return s+'</svg></div>';
 }
 function vendCard(m){
@@ -225,8 +225,8 @@ function chartSvg(data){
   const vals=[];data.forEach(d=>{vals.push(d.ing,d.egr);if(!d.future)vals.push(d.saldo)});
   const sc=niceScale(Math.min(0,...vals),Math.max(1000000,...vals));
   const y=v=>T+ph-(v-sc.min)/(sc.max-sc.min)*ph, band=pw/data.length, bw=Math.min(28,band*.28);
-  let s=`<div class="legend"><span><i style="background:var(--bar-in)"></i>Ingresos</span><span><i style="background:var(--bar-out)"></i>Egresos</span><span><i style="background:var(--line-saldo)"></i>Saldo acumulado</span></div><div class="tw"><svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Ingresos, egresos y saldo acumulado de caja por mes">`;
-  for(let v=sc.min;v<=sc.max+1e-9;v+=sc.step){s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L-8}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${cm(v)}</text>`}
+  let s=`<div class="legend"><span><i style="background:var(--bar-in)"></i>Ingresos</span><span><i style="background:var(--bar-out)"></i>Egresos</span><span><i style="background:var(--line-saldo)"></i>Saldo acumulado</span></div><div class="tw"><svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" style="display:block;max-width:860px;margin:0 auto" role="img" aria-label="Ingresos, egresos y saldo acumulado de caja por mes">`;
+  for(let v=sc.min;v<=sc.max+1e-9;v+=sc.step){s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L-8}" y="${(y(v)+3.5).toFixed(1)}" text-anchor="end">${cm(v)}</text>`}
   s+=`<line class="ax" x1="${L}" x2="${W-R}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
   let pts=[];
   data.forEach((d,i)=>{const cx=L+band*i+band/2;
