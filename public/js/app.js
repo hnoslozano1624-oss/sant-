@@ -168,11 +168,11 @@ function vResumen(){
   <div class="card kpi sm"><span class="lab">Valor del inventario</span><span class="val num">${fmt(D.valorInv)}</span><span class="note">Al costo promedio de compra</span></div>
   <div class="card kpi sm"><span class="lab">Por pagar</span><span class="val num">${fmt(D.pagar)}</span><span class="note">${(k=>k+(k===1?' orden sin pagar':' órdenes sin pagar'))(S.compras.filter(o=>o.pago==='Pendiente'&&o.estado!=='Anulada').length)}</span></div>
   <div class="card kpi sm"><span class="lab">Clientes con compra</span><span class="val num">${cliMes}</span><span class="note">En el mes seleccionado</span></div></div>`;
-  const ca=D.cort,caU=ca.reduce((a,v)=>a+unidades(v.items),0),caCosto=ca.reduce((a,v)=>a+(v.items||[]).reduce((b,i)=>b+(+i.cant||0)*D.cp(i.pid),0),0),caRef=ca.reduce((a,v)=>a+(v.ref||0),0);
+  const ca=D.cort,caU=ca.reduce((a,v)=>a+unidades(v.items),0),caCosto=ca.reduce((a,v)=>a+(v.items||[]).reduce((b,i)=>b+(+i.cant||0)*D.cp(i.pid),0),0);
   h+=`<div class="grid g4" style="margin-top:16px">
   <div class="card kpi sm"><span class="lab">Cortesías de ${mname(m).split(' ')[0].toLowerCase()}</span><span class="val num">${nf(st.cortU)} und</span><span class="note">${st.cortN} entrega${st.cortN===1?'':'s'} · costo ${fmt(st.cortCosto)}</span></div>
   <div class="card kpi sm"><span class="lab">Cortesías acumuladas</span><span class="val num">${nf(caU)} und</span><span class="note">${ca.length} entrega${ca.length===1?'':'s'} · costo ${fmt(caCosto)}</span></div>
-  <div class="card kpi sm"><span class="lab">Valor comercial regalado</span><span class="val num">${fmt(caRef)}</span><span class="note">A precio de lista, sin cobro</span></div></div>`;
+</div>`;
   h+=`<div class="grid g21" style="margin-top:16px"><div class="card"><h2>Flujo de caja por mes</h2>${chartSvg(chartData(D,months,curMonth()))}</div>
   <div class="card"><h2>Stock por producto</h2>${stockList()}</div></div>`;
   h+=`<div class="grid g2" style="margin-top:16px"><div class="card"><h2>Caja por medio de pago · ${mname(m)}</h2>${medioTable(m)}</div>
